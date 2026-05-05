@@ -87,3 +87,61 @@ clean: ## Cache-Dateien aufräumen (__pycache__, .pytest_cache)
 .PHONY: tree
 tree: ## Projektstruktur anzeigen
 	@find . -type f -not -path '*/__pycache__/*' -not -path '*/.pytest_cache/*' -not -path '*/.git/*' | sort
+
+# -----------------------------------------------------------------------------
+# Demo-GIF aufnehmen
+# -----------------------------------------------------------------------------
+
+.PHONY: gif-deps
+gif-deps: ## Playwright + Pillow installieren (einmalig für GIF-Aufnahme)
+	$(PIP) install --quiet playwright pillow
+	$(PYTHON) -m playwright install chromium
+	@echo "✓ Bereit. Jetzt 'make gif' aufrufen."
+
+.PHONY: gif
+gif: ## Demo-GIF automatisch erzeugen (headless, schreibt nach assets/demo.gif)
+	$(PYTHON) scripts/make_demo_gif.py
+
+.PHONY: demo
+demo: ## Auto-Walkthrough mit sichtbarem Browser (für eigene Bildschirmaufnahme)
+	@echo ""
+	@echo "  Starte einen Bildschirm-Recorder, dann läuft die Demo automatisch."
+	@echo "  In 5 Sekunden geht's los..."
+	@echo ""
+	@sleep 5
+	$(PYTHON) scripts/demo_walkthrough.py
+
+.PHONY: gif-help
+gif-help: ## Anleitung zum Demo-GIF
+	@echo ""
+	@echo "  ── Demo-GIF erzeugen ──"
+	@echo ""
+	@echo "  Variante A (vollautomatisch, empfohlen):"
+	@echo "    make gif-deps    # einmalig"
+	@echo "    make gif         # headless, schreibt assets/demo.gif"
+	@echo ""
+	@echo "  Variante B (eigenes Recording mit größerem Browser):"
+	@echo "    make run         # Terminal 1"
+	@echo "    make demo        # Terminal 2, parallel Recorder laufen lassen"
+	@echo ""
+
+# -----------------------------------------------------------------------------
+# GitHub
+# -----------------------------------------------------------------------------
+
+# Standard-Repo-Name. Wenn du einen anderen willst:  make push REPO=anderer-name
+REPO ?= laser-test-companion
+
+.PHONY: github-init
+github-init: ## Erstellt GitHub-Repo mit gh CLI und pusht (braucht: gh auth login)
+	@command -v gh >/dev/null 2>&1 || { echo "✗ 'gh' (GitHub CLI) ist nicht installiert. Installation: https://cli.github.com"; exit 1; }
+	gh repo create $(REPO) --public --source=. --remote=origin --push
+	@echo "✓ Repo erstellt und gepusht: https://github.com/$$(gh api user --jq .login)/$(REPO)"
+
+.PHONY: push
+push: ## Push aktueller Stand nach 'origin main' (Remote muss schon existieren)
+	git push -u origin main
+
+.PHONY: status
+status: ## git status anzeigen
+	@git status
