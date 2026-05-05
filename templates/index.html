@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laser Test Companion · EXCO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      --c-darkblue: #0B2545;
+      --c-blue: #1565C0;
+      --c-purple: #6A1B9A;
+      --c-green: #2E7D32;
+      --c-orange: #E65100;
+      --c-red: #C62828;
+      --c-darkgray: #37474F;
+      --c-amber: #F57F17;
+      --c-bg: #F4F7FB;
+    }
+    body { background: var(--c-bg); font-family: 'Segoe UI', Roboto, sans-serif; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .pulse-dot { width:10px; height:10px; border-radius:50%; background:#22c55e;
+                 box-shadow: 0 0 0 0 rgba(34,197,94,0.6); animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px;
+                border-radius:8px; cursor:pointer; color:#cdd9eb; font-size:14px;
+                transition: all .15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color:#fff; }
+    .nav-item.active { background:#1565C0; color:#fff; }
+
+    /* Pipeline diagram */
+    .layer { border-radius: 14px; padding: 16px 20px; margin: 0 auto; max-width: 980px;
+             box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .layer-title { font-weight: 700; font-size: 13px; letter-spacing: .5px;
+                   text-transform: uppercase; opacity: .9; margin-bottom: 10px; }
+    .layer-boxes { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+    .layer-box { background: rgba(255,255,255,0.18); color:#fff; padding:8px 14px;
+                 border-radius: 8px; font-size: 13px; cursor: help; transition: transform .15s; }
+    .layer-box:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+
+    .layer-trigger { background: #fff; border: 2px dashed #94a3b8; }
+    .layer-trigger .layer-title { color: #475569; }
+    .layer-trigger .layer-box { background: #f1f5f9; color:#334155; }
+
+    .layer-blue   { background: linear-gradient(135deg, #1976D2, #1565C0); color:#fff; }
+    .layer-purple { background: linear-gradient(135deg, #8E24AA, #6A1B9A); color:#fff; }
+    .layer-green  { background: linear-gradient(135deg, #43A047, #2E7D32); color:#fff; }
+    .layer-dark   { background: linear-gradient(135deg, #1B3A6E, #0B2545); color:#fff; }
+
+    .arrow { width: 4px; height: 26px; background: linear-gradient(180deg, #94a3b8, #475569);
+             margin: 6px auto; position: relative; animation: flowDown 1.5s infinite; }
+    .arrow::after { content:""; position:absolute; bottom:-7px; left:-6px;
+                    border:8px solid transparent; border-top-color:#475569; }
+    @keyframes flowDown {
+      0% { opacity:.4; transform: translateY(-4px); }
+      50% { opacity:1; transform: translateY(0); }
+      100% { opacity:.4; transform: translateY(4px); }
+    }
+
+    .diamond {
+      width: 200px; height: 200px; transform: rotate(45deg);
+      background: linear-gradient(135deg, #FB8C00, #E65100);
+      margin: 0 auto; display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 6px 16px rgba(230,81,0,0.35); border-radius: 14px;
+    }
+    .diamond-inner { transform: rotate(-45deg); color:#fff; font-weight:600; text-align:center;
+                     padding: 10px; font-size: 13px; max-width:170px; }
+    .diamond-row { display:flex; justify-content:center; align-items:center; gap:60px;
+                   margin: 30px auto; max-width: 1100px; }
+    .branch-line { width: 4px; height: 40px; background: #94a3b8; margin: 0 auto; }
+    .branch-cols { display:flex; gap:80px; justify-content:center; }
+    .branch-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .branch-label { font-size: 13px; font-weight:600; padding: 4px 10px; border-radius: 6px; }
+
+    .result-pass { background: var(--c-green); color:#fff; padding: 14px 28px; border-radius:10px;
+                   font-weight:700; box-shadow: 0 4px 10px rgba(46,125,50,0.4); }
+    .result-fail { background: var(--c-red); color:#fff; padding: 14px 28px; border-radius:10px;
+                   font-weight:700; box-shadow: 0 4px 10px rgba(198,40,40,0.4); }
+
+    .feedback-loop { color: var(--c-amber); font-size:13px; font-weight:600;
+                     border: 1px dashed var(--c-amber); padding: 6px 14px; border-radius:8px;
+                     display:inline-block; margin-top: 10px; }
+
+    /* Tree (team structure) */
+    .tree { text-align:center; }
+    .tree-node { display:inline-block; padding:8px 14px; border-radius:8px; color:#fff;
+                 font-size:13px; font-weight:600; margin: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .tree-line { width: 2px; height: 18px; background: #94a3b8; margin: 0 auto; }
+    .tree-row { display:flex; justify-content:center; gap:30px; margin-top:8px; }
+
+    /* Kanban */
+    .kanban { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .kanban-col { background: #f8fafc; border-radius: 10px; padding: 10px; min-height: 320px; }
+    .kanban-col-header { font-weight:700; font-size:13px; margin-bottom: 8px; padding: 4px 8px;
+                         border-radius: 6px; }
+    .col-OPEN        { background: #fff8e1; color:#7c5300; }
+    .col-IN_PROGRESS { background: #e3f2fd; color:#0d47a1; }
+    .col-IN_REVIEW   { background: #f3e5f5; color:#4a148c; }
+    .col-IN_TEST     { background: #fff3e0; color:#bf360c; }
+    .col-CLOSED      { background: #e8f5e9; color:#1b5e20; }
+
+    .bug-card { background:#fff; border-radius:8px; padding:10px; margin-bottom:8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94a3b8; cursor:pointer; }
+    .sev-Critical { border-left-color: var(--c-red); }
+    .sev-Major    { border-left-color: var(--c-amber); }
+    .sev-Minor    { border-left-color: #1976D2; }
+    .sev-Blocker  { border-left-color: #4a148c; }
+    .sev-Trivial  { border-left-color: #94a3b8; }
+
+    /* Sprint kanban */
+    .sprint-kanban { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .story-card { background:#fff; border-radius:8px; padding:10px;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom:8px;
+                  border-left: 4px solid var(--c-blue); }
+    .sp-badge { background: var(--c-blue); color:#fff; font-size:11px; padding: 2px 8px;
+                border-radius: 999px; font-weight:600; }
+
+    /* IEC circle */
+    .iec-circle { position: relative; width: 480px; height: 480px; margin: 0 auto; }
+    .iec-node { position:absolute; width: 130px; padding: 8px 10px; background:#fff;
+                border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); font-size: 12px;
+                text-align: center; border: 2px solid var(--c-blue); }
+    .iec-node.active { border-color: var(--c-orange); animation: glow 1.5s infinite; }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(230,81,0,0.5); }
+      50% { box-shadow: 0 0 0 10px rgba(230,81,0,0); }
+    }
+
+    /* Squish run console */
+    .console { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px;
+               font-family: 'Consolas', monospace; font-size: 13px; min-height: 320px; max-height: 480px; overflow-y:auto; }
+    .console .ok   { color: #4ade80; }
+    .console .fail { color: #f87171; }
+
+    /* Code block */
+    pre.code { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px;
+               font-family: 'Consolas', monospace; font-size: 12px; overflow-x:auto; line-height: 1.5; }
+    pre.code .com { color: #94a3b8; }
+    pre.code .kw  { color: #c084fc; }
+    pre.code .str { color: #fbbf24; }
+    pre.code .fn  { color: #60a5fa; }
+
+    /* Trend bars */
+    .trend-bars { display:flex; gap:6px; align-items:flex-end; height:120px; padding: 10px 0; }
+    .trend-bar { flex:1; background: linear-gradient(180deg, #43A047, #2E7D32); border-radius: 4px 4px 0 0;
+                 position: relative; }
+    .trend-bar.warn { background: linear-gradient(180deg, #FFA726, #F57F17); }
+    .trend-bar.bad  { background: linear-gradient(180deg, #EF5350, #C62828); }
+
+    /* Timeline */
+    .timeline { display:grid; grid-template-columns: repeat(14, 1fr); gap:4px; }
+    .day-cell { padding: 8px 4px; border-radius: 6px; font-size: 11px; text-align:center;
+                background: #e2e8f0; color:#334155; }
+    .day-cell.done { background: #c8e6c9; color:#1b5e20; }
+    .day-cell.today { background: var(--c-orange); color:#fff; font-weight: 700;
+                      box-shadow: 0 0 0 3px rgba(230,81,0,0.25); }
+    .day-cell.future { background: #f1f5f9; color: #94a3b8; }
+
+    /* Modal */
+    .modal-bg { position:fixed; inset:0; background: rgba(0,0,0,0.5); display:flex;
+                align-items:center; justify-content:center; z-index:50; }
+    .modal { background:#fff; border-radius: 12px; max-width: 760px; width:90%;
+             max-height: 88vh; overflow-y:auto; padding: 24px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--c-darkblue);
+             color: #fff; padding: 12px 18px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+             z-index: 60; font-size: 14px; }
+
+    /* Donut */
+    .donut { width: 140px; height: 140px; border-radius: 50%; position: relative; }
+    .donut::after { content:""; position:absolute; inset: 24px; background: #fff; border-radius: 50%; }
+
+    .badge-class-C { background: var(--c-red); color:#fff; padding:2px 8px; border-radius: 6px;
+                     font-weight:700; font-size:11px; }
+    .badge-class-B { background: var(--c-amber); color:#fff; padding:2px 8px; border-radius: 6px;
+                     font-weight:700; font-size:11px; }
+    .badge-class-A { background: var(--c-green); color:#fff; padding:2px 8px; border-radius: 6px;
+                     font-weight:700; font-size:11px; }
+
+    .status-pass { color: var(--c-green); font-weight: 700; }
+    .status-fail { color: var(--c-red); font-weight: 700; }
+    .status-wip  { color: var(--c-amber); font-weight: 700; }
+  </style>
+</head>
+<body x-data="appData()" x-init="init()" class="min-h-screen">
+
+<!-- Linke Sidebar mit Logo, Navigation und Status-Footer -->
+<aside style="background: var(--c-darkblue); width: 260px;" class="fixed left-0 top-0 bottom-0 flex flex-col p-5 text-white">
+  <div class="mb-6">
+    <div class="text-lg font-bold">Laser Test Companion</div>
+    <div class="text-xs text-slate-400">EXCO GmbH</div>
+    <div class="text-[11px] text-slate-500">Team IT Solutions · Jena</div>
+  </div>
+
+  <nav class="flex flex-col gap-1 flex-1">
+    <div class="nav-item" :class="view==='overview'    && 'active'" @click="view='overview'"   >🏠 Übersicht &amp; Pipeline</div>
+    <div class="nav-item" :class="view==='testcases'   && 'active'" @click="view='testcases'"  >📋 Test Case Manager</div>
+    <div class="nav-item" :class="view==='squish'      && 'active'" @click="view='squish'"     >⚙️ Squish Simulator</div>
+    <div class="nav-item" :class="view==='bugs'        && 'active'" @click="view='bugs'"       >🐞 Bug Tracking (Jira)</div>
+    <div class="nav-item" :class="view==='trace'       && 'active'" @click="view='trace'"      >🔗 Traceability &amp; Sprint</div>
+  </nav>
+
+  <div class="mt-6 pt-4 border-t border-slate-700 text-xs text-slate-400">
+    <div class="flex items-center gap-2 mb-2"><span class="pulse-dot"></span><span>CI-Pipeline läuft</span></div>
+    <div>Sprint <span x-text="sprint?.number ?? 14"></span> · Tag <span x-text="sprint?.current_day ?? 7"></span> von <span x-text="sprint?.total_days ?? 14"></span></div>
+    <div class="mt-3 text-slate-500">Version 1.0 · Anas Haj Naeif</div>
+  </div>
+</aside>
+
+<!-- Hauptbereich rechts neben der Sidebar -->
+<main style="margin-left: 260px;" class="p-8">
+
+  <!-- ========== SEITE 1: ÜBERSICHT & PIPELINE ========== -->
+  <section x-show="view==='overview'" x-cloak>
+    <h1 class="text-2xl font-bold" style="color: var(--c-darkblue);">Testautomatisierung Lasersystem — Übersicht</h1>
+    <p class="text-slate-500 mb-6">EXCO GmbH · Team IT Solutions · GUI-Tests Medizintechnik</p>
+
+    <!-- Vier Statistikkarten in einer Zeile -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="card p-5 border-l-4" style="border-color: var(--c-blue);">
+        <div class="text-xs text-slate-500 uppercase tracking-wide">Aktive Testfälle</div>
+        <div class="text-3xl font-bold mt-1" style="color: var(--c-blue);" x-text="stats?.active_test_cases ?? '–'"></div>
+        <div class="text-xs text-slate-400 mt-1">📋 Squish-automatisiert</div>
+      </div>
+      <div class="card p-5 border-l-4" style="border-color: var(--c-green);">
+        <div class="text-xs text-slate-500 uppercase tracking-wide">Tests bestanden</div>
+        <div class="text-3xl font-bold mt-1" style="color: var(--c-green);" x-text="stats?.passed_label ?? '–'"></div>
+        <div class="text-xs text-slate-400 mt-1">✅ Letzter Nightly Build</div>
+      </div>
+      <div class="card p-5 border-l-4" style="border-color: var(--c-red);">
+        <div class="text-xs text-slate-500 uppercase tracking-wide">Offene Bugs</div>
+        <div class="text-3xl font-bold mt-1" style="color: var(--c-red);" x-text="stats?.open_bugs ?? '–'"></div>
+        <div class="text-xs text-slate-400 mt-1">🐞 in Jira getrackt</div>
+      </div>
+      <div class="card p-5 border-l-4" style="border-color: var(--c-purple);">
+        <div class="text-xs text-slate-500 uppercase tracking-wide">Sprint 14 Fortschritt</div>
+        <div class="text-3xl font-bold mt-1" style="color: var(--c-purple);"><span x-text="stats?.sprint_progress ?? '–'"></span>%</div>
+        <div class="text-xs text-slate-400 mt-1">🚀 21 / 42 Story Points</div>
+      </div>
+    </div>
+
+    <!-- Großes Pipeline-Diagramm: das Herzstück der Übersichtsseite -->
+    <div class="card p-6 mb-8">
+      <h2 class="text-xl font-bold" style="color: var(--c-darkblue);">End-to-End Testautomatisierungs-Pipeline</h2>
+      <p class="text-slate-500 text-sm mb-6">Von der User-Anforderung bis zum freigegebenen Lasersystem</p>
+
+      <!-- Layer 0: was die Pipeline auslöst -->
+      <div class="layer layer-trigger">
+        <div class="layer-title">Layer 0 · Auslöser</div>
+        <div class="layer-boxes">
+          <div class="layer-box" title="Neue User- oder System-Anforderung trifft im Team ein">📝 Neue Anforderung</div>
+          <div class="layer-box" title="Entwickler hat in SVN committet — CI startet automatisch">🔁 Code-Commit SVN</div>
+          <div class="layer-box" title="Geplanter nächtlicher Lauf der gesamten Testsuite">🌙 Nightly Build</div>
+          <div class="layer-box" title="Fix wurde geliefert, Bug muss erneut verifiziert werden">🐞 Bug-Reopen</div>
+        </div>
+      </div>
+      <div class="arrow"></div>
+
+      <!-- Layer 1: Anforderungs- und Testdesign -->
+      <div class="layer layer-blue">
+        <div class="layer-title">Layer 1 · Anforderung &amp; Testdesign</div>
+        <div class="layer-boxes">
+          <div class="layer-box" title="Spezifikation lesen und Akzeptanzkriterien klären">📋 Anforderung lesen</div>
+          <div class="layer-box" title="Testfall mit Schritten und Erwartungswerten skizzieren">🧩 Testfall designen</div>
+          <div class="layer-box" title="REQ-ID auf TC-ID mappen — Pflicht für IEC 62304">🔗 Traceability-Link</div>
+          <div class="layer-box" title="TC-Ticket im Jira anlegen, Story Points schätzen">📥 In Jira anlegen</div>
+        </div>
+      </div>
+      <div class="arrow"></div>
+
+      <!-- Layer 2: Squish-Implementierung -->
+      <div class="layer layer-purple">
+        <div class="layer-title">Layer 2 · Squish-Implementierung</div>
+        <div class="layer-boxes">
+          <div class="layer-box" title="Klicks und Eingaben in Squish-IDE aufnehmen">🎬 Recording in Squish-IDE</div>
+          <div class="layer-box" title="Generiertes Skript verfeinern, waitForObject einsetzen">🐍 Python-Skript anpassen</div>
+          <div class="layer-box" title="Object-Map prüfen, Symbolic Names konsolidieren">🗺 Object Map prüfen</div>
+          <div class="layer-box" title="Testsuite ins SVN einchecken — CI-Trigger">💾 SVN-Commit Testsuite</div>
+        </div>
+      </div>
+      <div class="arrow"></div>
+
+      <!-- Entscheidungsraute: Test passes or fails -->
+      <div class="diamond" title="squishrunner führt das Skript gegen die laufende AUT aus">
+        <div class="diamond-inner">◇ Test-Ausführung ◇<br/>squishrunner startet AUT<br/>und führt Skript aus</div>
+      </div>
+
+      <!-- Verzweigung in Pass und Fail -->
+      <div class="branch-cols mt-6">
+        <div class="branch-col">
+          <div class="branch-label" style="background: var(--c-green); color:#fff;">Bestanden</div>
+          <div class="branch-line"></div>
+          <div class="result-pass">✅ TEST PASSED</div>
+        </div>
+        <div class="branch-col">
+          <div class="branch-label" style="background: var(--c-red); color:#fff;">Fehlgeschlagen</div>
+          <div class="branch-line"></div>
+          <div class="result-fail">❌ TEST FAILED</div>
+          <div class="text-xs mt-2 text-slate-600">→ Screenshot · Log-Auszug · Bug in Jira</div>
+        </div>
+      </div>
+
+      <div class="arrow"></div>
+
+      <!-- Layer 3: Reporting -->
+      <div class="layer layer-green">
+        <div class="layer-title">Layer 3 · Report &amp; Test Center</div>
+        <div class="layer-boxes">
+          <div class="layer-box" title="Squish erzeugt JUnit-XML, Jenkins importiert es">📊 JUnit-XML-Report</div>
+          <div class="layer-box" title="Test Center sammelt alle Reports zentral">📈 Test Center Dashboard</div>
+          <div class="layer-box" title="Pass-Rate über die letzten Sprints visualisieren">📉 Trend-Analyse</div>
+          <div class="layer-box" title="CI-Pipeline-Status grün/rot zurück ans Team">🔄 CI-Pipeline-Update</div>
+        </div>
+      </div>
+      <div class="text-center"><span class="feedback-loop">↺ Optimierungs-Schleife zurück zu Layer 1</span></div>
+      <div class="arrow"></div>
+
+      <!-- Layer 4: regulatorische Freigabe -->
+      <div class="layer layer-dark">
+        <div class="layer-title">Layer 4 · Regulatorische Freigabe</div>
+        <div class="layer-boxes">
+          <div class="layer-box" title="V&amp;V nach IEC 62304 — Klassen A/B/C">📑 IEC 62304 V&amp;V</div>
+          <div class="layer-box" title="Audit nach ISO 13485 Qualitätsmanagement">🔍 ISO 13485 Audit</div>
+          <div class="layer-box" title="Verifikation: System richtig gebaut · Validierung: richtiges System">🩺 Verifikation/Validierung</div>
+          <div class="layer-box" title="Release-Freigabe durch QA / Compliance">📦 Release-Freigabe</div>
+        </div>
+      </div>
+
+      <!-- Legende -->
+      <div class="mt-6 flex flex-wrap gap-4 text-xs text-slate-600 justify-center">
+        <span>🔵 Test-Design</span><span>🟣 Squish-Implementierung</span>
+        <span>🟢 Pass-Pfad</span><span>🔴 Fail-Pfad</span>
+        <span>🟡 Feedback-Schleife</span><span>⬛ Compliance</span>
+      </div>
+    </div>
+
+    <!-- Sprint-Fortschrittsleiste -->
+    <div class="card p-6 mb-8">
+      <h2 class="text-xl font-bold" style="color: var(--c-darkblue);">Sprint 14 — Aktueller Stand</h2>
+      <p class="text-slate-500 text-sm mb-4">07.05.2026 – 20.05.2026 · 2-Wochen-Sprint</p>
+      <div class="grid grid-cols-5 gap-2 mb-4 text-xs">
+        <div class="p-3 rounded text-white text-center" style="background: var(--c-green);">✅ Sprint Planning</div>
+        <div class="p-3 rounded text-white text-center" style="background: var(--c-green);">✅ Daily 1–3</div>
+        <div class="p-3 rounded text-white text-center" style="background: var(--c-orange); animation: pulse 1.5s infinite;">🔄 Daily 7 — Heute</div>
+        <div class="p-3 rounded text-center bg-slate-200 text-slate-500">⬜ Mid-Sprint Review</div>
+        <div class="p-3 rounded text-center bg-slate-200 text-slate-500">⬜ Sprint Review + Retro</div>
+      </div>
+      <div class="bg-slate-200 rounded-full h-6 overflow-hidden">
+        <div class="h-full flex items-center justify-end pr-3 text-white text-xs font-bold"
+             :style="`width: ${stats?.sprint_progress ?? 50}%; background: linear-gradient(90deg, #6A1B9A, #8E24AA);`">
+          21 / 42 Story Points
+        </div>
+      </div>
+    </div>
+
+    <!-- Teamstruktur als Baum -->
+    <div class="card p-6">
+      <h2 class="text-xl font-bold mb-4" style="color: var(--c-darkblue);">Projektorganisation — Lasersystem-Testteam</h2>
+      <div class="tree">
+        <div class="tree-node" style="background: var(--c-darkblue);">Kunde · Medizintechnik-Hersteller</div>
+        <div class="tree-line"></div>
+        <div class="tree-node" style="background: var(--c-purple);">EXCO Team IT Solutions Jena</div>
+        <div class="tree-line"></div>
+        <div class="tree-row">
+          <div>
+            <div class="tree-node" style="background: var(--c-blue);">Testautomatisierung</div>
+            <div class="tree-line"></div>
+            <div class="tree-row">
+              <div class="tree-node" style="background: var(--c-blue); opacity:.85;">Junior</div>
+              <div class="tree-node" style="background: var(--c-blue); opacity:.85;">Senior</div>
+            </div>
+            <div class="text-xs text-slate-500 mt-2">↑ Du hier (Junior Softwareentwickler)</div>
+          </div>
+          <div>
+            <div class="tree-node" style="background: var(--c-darkgray);">Entwicklungsteam</div>
+            <div class="tree-line"></div>
+            <div class="tree-row">
+              <div class="tree-node" style="background: var(--c-darkgray); opacity:.85;">Frontend</div>
+              <div class="tree-node" style="background: var(--c-darkgray); opacity:.85;">Backend</div>
+            </div>
+          </div>
+          <div>
+            <div class="tree-node" style="background: var(--c-green);">QA / Compliance</div>
+            <div class="tree-line"></div>
+            <div class="tree-row">
+              <div class="tree-node" style="background: var(--c-green); opacity:.85;">V&amp;V</div>
+              <div class="tree-node" style="background: var(--c-green); opacity:.85;">Audit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SEITE 2: TEST CASE MANAGER ========== -->
+  <section x-show="view==='testcases'" x-cloak>
+    <h1 class="text-2xl font-bold" style="color: var(--c-darkblue);">Test Case Manager — GUI-Tests Lasersystem</h1>
+    <p class="text-slate-500 mb-6">Erfassung, Implementierung und Pflege automatisierter Testfälle</p>
+
+    <!-- Filterleiste -->
+    <div class="card p-4 mb-6 flex gap-4 items-center">
+      <select x-model="filterModule" class="border border-slate-300 rounded px-3 py-2 text-sm">
+        <option value="">Alle Module</option>
+        <option>Surgeon UI</option><option>Calibration</option>
+        <option>Service</option><option>Patient Data</option><option>Imaging</option>
+      </select>
+      <select x-model="filterStatus" class="border border-slate-300 rounded px-3 py-2 text-sm">
+        <option value="">Alle Status</option>
+        <option value="implementiert">Implementiert</option>
+        <option value="in_arbeit">In Arbeit</option>
+        <option value="zu_reviewen">Zu reviewen</option>
+        <option value="failed">Failed</option>
+      </select>
+      <button @click="showNewTcModal=true"
+              class="ml-auto text-white px-4 py-2 rounded text-sm font-semibold"
+              style="background: var(--c-blue);">+ Neuen Testfall anlegen</button>
+    </div>
+
+    <!-- Testfall-Karten 2x2 -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+      <template x-for="tc in filteredTestCases" :key="tc.id">
+        <div class="card p-5 border-l-4"
+             :style="`border-color: ${tcColor(tc.status)};`">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="text-xs text-slate-500" x-text="tc.id"></div>
+              <div class="text-lg font-bold mt-1" x-text="tc.title"></div>
+              <div class="text-xs text-slate-500 mt-1">Modul: <span x-text="tc.module"></span></div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded font-semibold"
+                  :style="`background: ${tcColor(tc.status)}22; color: ${tcColor(tc.status)};`"
+                  x-text="tcStatusLabel(tc.status)"></span>
+          </div>
+          <div class="mt-3 text-xs text-slate-600">
+            <div>Anforderung: <span class="font-semibold" x-text="tc.requirement_id"></span></div>
+            <div>Letzter Lauf:
+              <template x-if="tc.last_run_at">
+                <span><span x-text="tc.last_run_at"></span> — <span x-text="tc.last_run_result"></span>
+                  <span x-show="tc.last_run_seconds">(<span x-text="tc.last_run_seconds"></span> s)</span></span>
+              </template>
+              <template x-if="!tc.last_run_at"><span class="text-slate-400">noch kein Lauf</span></template>
+            </div>
+            <div>Skript: <code class="bg-slate-100 px-1 rounded" x-text="tc.squish_script"></code></div>
+            <div x-show="tc.linked_bug">Verlinkter Bug:
+              <span class="font-semibold" style="color: var(--c-red);" x-text="tc.linked_bug"></span></div>
+          </div>
+          <button class="mt-3 text-xs text-white px-3 py-1.5 rounded"
+                  style="background: var(--c-blue);"
+                  @click="selectedTc = tc">Details anzeigen</button>
+        </div>
+      </template>
+    </div>
+
+    <!-- Lebenszyklus-Pipeline für einen Testfall -->
+    <div class="card p-6">
+      <h2 class="text-xl font-bold mb-4" style="color: var(--c-darkblue);">Lebenszyklus eines Testfalls</h2>
+      <div class="grid grid-cols-7 gap-3">
+        <template x-for="(step, idx) in lifecycleSteps" :key="step.label">
+          <div class="text-center">
+            <div class="rounded-lg p-3 text-white text-xs font-semibold mb-2"
+                 :style="`background: ${step.color};`" x-text="`${idx+1}. ${step.label}`"></div>
+            <div class="text-[11px] text-slate-500" x-text="step.desc"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Detail-Modal -->
+    <div class="modal-bg" x-show="selectedTc" x-cloak @click.self="selectedTc=null">
+      <div class="modal" x-show="selectedTc">
+        <template x-if="selectedTc">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-sm text-slate-500" x-text="selectedTc.id"></div>
+                <h3 class="text-2xl font-bold" x-text="selectedTc.title"></h3>
+                <div class="text-sm text-slate-500">Modul: <span x-text="selectedTc.module"></span> · Anforderung: <span x-text="selectedTc.requirement_id"></span></div>
+              </div>
+              <button @click="selectedTc=null" class="text-slate-500 text-2xl">&times;</button>
+            </div>
+
+            <h4 class="font-semibold mb-2">Testschritte</h4>
+            <ol class="list-decimal pl-5 text-sm text-slate-700 mb-4">
+              <template x-for="s in selectedTc.steps"><li x-text="s"></li></template>
+            </ol>
+
+            <h4 class="font-semibold mb-2">Object Map</h4>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <template x-for="o in selectedTc.object_map">
+                <code class="bg-slate-100 px-2 py-1 rounded text-xs" x-text="o"></code>
+              </template>
+            </div>
+
+            <h4 class="font-semibold mb-2">Squish-Skript-Vorschau</h4>
+            <pre class="code"><span class="com"># Wir verbinden uns zur laufenden AUT (Attachable-Modus)</span>
+<span class="kw">def</span> <span class="fn">main</span>():
+    <span class="fn">startApplication</span>(<span class="str">"LaserSystemUI"</span>)
+    <span class="fn">waitForObject</span>(<span class="str">":MainWindow"</span>)
+    <span class="com"># Hier klicken wir den Test-Schritt an und prüfen das Ergebnis</span>
+    <span class="fn">clickButton</span>(<span class="fn">waitForObject</span>(<span class="str">":btnTrigger"</span>))
+    test.<span class="fn">verify</span>(<span class="fn">object</span>.exists(<span class="str">":resultElement"</span>))</pre>
+
+            <div class="mt-4 flex gap-2">
+              <button class="text-white px-4 py-2 rounded text-sm font-semibold"
+                      style="background: var(--c-purple);"
+                      @click="view='squish'; squishSelected=selectedTc.id; selectedTc=null">▶ Test ausführen</button>
+              <button class="text-white px-4 py-2 rounded text-sm font-semibold"
+                      style="background: var(--c-red);"
+                      @click="view='bugs'; selectedTc=null">🐞 Bug melden</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Modal für neuen Testfall -->
+    <div class="modal-bg" x-show="showNewTcModal" x-cloak @click.self="showNewTcModal=false">
+      <div class="modal">
+        <h3 class="text-2xl font-bold mb-4">Neuen Testfall anlegen</h3>
+        <form @submit.prevent="createTestCase()" class="space-y-3 text-sm">
+          <div><label class="block mb-1 font-semibold">Titel</label>
+            <input x-model="newTc.title" required class="w-full border border-slate-300 rounded px-3 py-2"></div>
+          <div><label class="block mb-1 font-semibold">Modul</label>
+            <select x-model="newTc.module" class="w-full border border-slate-300 rounded px-3 py-2">
+              <option>Surgeon UI</option><option>Calibration</option>
+              <option>Service</option><option>Patient Data</option><option>Imaging</option>
+            </select></div>
+          <div><label class="block mb-1 font-semibold">Verlinkte Anforderung</label>
+            <select x-model="newTc.requirement_id" class="w-full border border-slate-300 rounded px-3 py-2">
+              <template x-for="r in requirements" :key="r.id">
+                <option :value="r.id" x-text="`${r.id} — ${r.title}`"></option>
+              </template>
+            </select></div>
+          <div><label class="block mb-1 font-semibold">Testschritte (eine Zeile pro Schritt)</label>
+            <textarea x-model="newTc.steps_raw" rows="4" class="w-full border border-slate-300 rounded px-3 py-2"></textarea></div>
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="showNewTcModal=false" class="px-4 py-2 rounded border border-slate-300">Abbrechen</button>
+            <button type="submit" class="text-white px-4 py-2 rounded font-semibold" style="background: var(--c-blue);">Speichern</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SEITE 3: SQUISH SIMULATOR ========== -->
+  <section x-show="view==='squish'" x-cloak>
+    <h1 class="text-2xl font-bold" style="color: var(--c-darkblue);">Squish Simulator — GUI-Test live ausführen</h1>
+    <p class="text-slate-500 mb-6">Simuliere die Ausführung eines Squish-Tests am Lasersystem</p>
+
+    <div class="grid grid-cols-2 gap-6 mb-8">
+      <!-- Linke Seite: Testfall-Auswahl -->
+      <div class="card p-6">
+        <h3 class="font-bold mb-3">Testfall auswählen</h3>
+        <select x-model="squishSelected" class="w-full border border-slate-300 rounded px-3 py-2 mb-4">
+          <template x-for="tc in testCases" :key="tc.id">
+            <option :value="tc.id" x-text="`${tc.id} — ${tc.title}`"></option>
+          </template>
+        </select>
+
+        <div class="font-bold mb-2">AUT-Modus</div>
+        <label class="flex items-center gap-2 mb-1 text-sm">
+          <input type="radio" x-model="autMode" value="attachable">
+          Attachable AUT (empfohlen — AUT läuft separat)</label>
+        <label class="flex items-center gap-2 mb-4 text-sm">
+          <input type="radio" x-model="autMode" value="auto">
+          Auto-Start AUT (Squish startet AUT)</label>
+
+        <div class="text-xs text-slate-500 mb-4">Toolkit: Qt Application (typisch für Lasersystem-UI)</div>
+
+        <button @click="runSquish()"
+                :disabled="running"
+                class="w-full text-white px-4 py-3 rounded font-semibold disabled:opacity-60"
+                style="background: var(--c-purple);">▶ Test ausführen</button>
+      </div>
+
+      <!-- Rechte Seite: Live-Konsole -->
+      <div>
+        <div class="font-bold mb-2">Live-Ausführung</div>
+        <div class="console" x-ref="console">
+          <template x-for="line in runLines" :key="line.id">
+            <div :class="line.ok ? 'ok' : 'fail'">
+              <span x-text="line.ok ? '✅' : '❌'"></span>
+              <span x-text="line.text"></span>
+            </div>
+          </template>
+          <div x-show="runResult" class="mt-3 pt-3 border-t border-slate-700">
+            <div :class="runResult==='PASS' ? 'ok' : 'fail'">
+              📊 RESULT: <span x-text="runResult"></span>
+              (<span x-text="runDuration"></span> s)
+            </div>
+            <div class="text-slate-400 text-xs mt-1" x-show="runReport">📁 Report: <span x-text="runReport"></span></div>
+            <div class="fail text-xs mt-1" x-show="runScreenshot">📸 Screenshot: <span x-text="runScreenshot"></span></div>
+            <div class="fail text-xs mt-1" x-show="runAutoBug">🐞 Bug automatisch in Jira erstellt: <span x-text="runAutoBug"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Squish-Skript-Vorschau -->
+    <div class="card p-6 mb-8">
+      <h3 class="font-bold mb-3">Squish-Skript — Echter Code (TC-1042)</h3>
+<pre class="code"><span class="com"># Hier verbinden wir uns zur laufenden Anwendung</span>
+<span class="com"># (Attachable AUT — die App läuft schon, Squish hängt sich nur dran)</span>
+<span class="kw">def</span> <span class="fn">main</span>():
+    <span class="fn">startApplication</span>(<span class="str">"LaserSystemUI"</span>)
+
+    <span class="com"># Wir warten bis der Hauptbildschirm da ist,</span>
+    <span class="com"># bevor wir irgendwas anklicken</span>
+    <span class="fn">waitForObject</span>(<span class="str">":MainWindow"</span>)
+
+    <span class="com"># Jetzt klicken wir auf "Neuer Patient"</span>
+    <span class="com"># Squish findet den Button über die Object-Map (objectName)</span>
+    <span class="fn">clickButton</span>(<span class="fn">waitForObject</span>(<span class="str">":btnNewPatient"</span>))
+
+    <span class="com"># Pflichtfelder ausfüllen</span>
+    <span class="fn">type</span>(<span class="fn">waitForObject</span>(<span class="str">":nameField"</span>), <span class="str">"Mustermann, Max"</span>)
+    <span class="fn">type</span>(<span class="fn">waitForObject</span>(<span class="str">":dobField"</span>), <span class="str">"01.01.1980"</span>)
+    <span class="fn">type</span>(<span class="fn">waitForObject</span>(<span class="str">":patientIdField"</span>), <span class="str">"P-2026-1042"</span>)
+
+    <span class="com"># Speichern und prüfen ob der Patient in der Liste auftaucht</span>
+    <span class="fn">clickButton</span>(<span class="fn">waitForObject</span>(<span class="str">":btnSave"</span>))
+    test.<span class="fn">verify</span>(<span class="fn">object</span>.exists(<span class="str">":patientList_Mustermann"</span>))</pre>
+    </div>
+
+    <!-- AS-IS / TO-BE Vergleich -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+      <div class="card p-5 border-2" style="border-color: var(--c-red);">
+        <div class="font-bold mb-2" style="color: var(--c-red);">Manuell — Tester klickt von Hand</div>
+        <ul class="text-sm space-y-1">
+          <li>• AUT manuell starten — 30 s</li>
+          <li>• Patient anlegen Schritt für Schritt — 2 min</li>
+          <li>• Visuelle Prüfung — 30 s</li>
+          <li>• Excel ausfüllen, Screenshot — 90 s</li>
+        </ul>
+        <div class="font-bold mt-3">Gesamt: ~5 Minuten pro Testfall</div>
+        <div class="text-xs text-slate-500 mt-1">Bei 142 Testfällen = 11,8 Stunden manueller Aufwand</div>
+      </div>
+      <div class="card p-5 border-2" style="border-color: var(--c-green);">
+        <div class="font-bold mb-2" style="color: var(--c-green);">Automatisiert mit Squish</div>
+        <ul class="text-sm space-y-1">
+          <li>• squishrunner startet AUT — 2 s</li>
+          <li>• Skript läuft alle Schritte — 3 s</li>
+          <li>• JUnit-XML-Report wird erstellt — 0,5 s</li>
+          <li>• Test Center importiert automatisch — 1 s</li>
+        </ul>
+        <div class="font-bold mt-3">Gesamt: ~7 Sekunden pro Testfall</div>
+        <div class="text-xs text-slate-500 mt-1">Bei 142 Testfällen = 17 Minuten Gesamtlaufzeit, parallel möglich</div>
+      </div>
+    </div>
+    <div class="card p-4 text-center mb-8" style="background: linear-gradient(135deg, #43A047, #2E7D32); color:#fff;">
+      <div class="text-2xl font-bold">~96% Zeitersparnis</div>
+      <div class="text-sm opacity-90">Tester konzentriert sich auf Edge Cases statt Routine-Klicks</div>
+    </div>
+
+    <!-- Trend-Chart aus Test-Center -->
+    <div class="card p-6">
+      <h3 class="font-bold mb-3">Test Center — Letzte 10 Sprint-Läufe</h3>
+      <div class="trend-bars">
+        <template x-for="r in trend" :key="r.date">
+          <div class="trend-bar"
+               :class="passRate(r) > 95 ? '' : (passRate(r) > 80 ? 'warn' : 'bad')"
+               :style="`height: ${ (r.passed / r.total) * 100 }%`"
+               :title="`${r.date}: ${r.passed}/${r.total} bestanden`"></div>
+        </template>
+      </div>
+      <div class="grid grid-cols-10 gap-1 text-[10px] text-slate-500 mt-1">
+        <template x-for="r in trend"><div class="text-center" x-text="r.date.slice(5)"></div></template>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SEITE 4: BUG TRACKING ========== -->
+  <section x-show="view==='bugs'" x-cloak>
+    <h1 class="text-2xl font-bold" style="color: var(--c-darkblue);">Bug Tracking — Jira-Workflow</h1>
+    <p class="text-slate-500 mb-6">Fehler erfassen, dokumentieren und verfolgen — analog zum Jira-Workflow</p>
+
+    <!-- Kanban-Board -->
+    <div class="card p-4 mb-8">
+      <div class="kanban">
+        <template x-for="col in bugColumns" :key="col.key">
+          <div class="kanban-col">
+            <div class="kanban-col-header" :class="`col-${col.key}`" x-text="col.label"></div>
+            <template x-for="b in bugs.filter(x => x.status === col.key)" :key="b.id">
+              <div class="bug-card" :class="`sev-${b.severity}`" @click="selectedBug=b">
+                <div class="text-xs text-slate-500 flex justify-between">
+                  <span x-text="b.id"></span>
+                  <span class="font-semibold" :style="`color: ${sevColor(b.severity)};`" x-text="b.severity"></span>
+                </div>
+                <div class="font-semibold text-sm mt-1" x-text="b.title"></div>
+                <div class="text-xs text-slate-500 mt-1" x-text="b.module"></div>
+                <div x-show="b.linked_test" class="text-[11px] text-slate-400 mt-1">→ <span x-text="b.linked_test"></span></div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Bug-Workflow Diagramm -->
+    <div class="card p-6 mb-8">
+      <h3 class="font-bold mb-4" style="color: var(--c-darkblue);">Bug-Lebenszyklus — Vom Auffinden bis zur Schließung</h3>
+      <div class="grid grid-cols-6 gap-2 text-xs">
+        <template x-for="(s, idx) in bugLifecycle" :key="s.label">
+          <div class="text-center">
+            <div class="rounded-lg p-3 text-white font-semibold mb-1"
+                 :style="`background: ${s.color};`" x-text="`${idx+1}. ${s.label}`"></div>
+            <div class="text-[11px] text-slate-500" x-text="s.desc"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Statistiken -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="card p-5">
+        <div class="font-bold mb-3 text-sm">Offen nach Schweregrad</div>
+        <div class="flex items-center gap-4">
+          <div class="donut" :style="`background: ${donutGradient};`"></div>
+          <div class="text-xs space-y-1">
+            <div><span class="inline-block w-3 h-3 rounded-sm align-middle" style="background: var(--c-red);"></span> Critical</div>
+            <div><span class="inline-block w-3 h-3 rounded-sm align-middle" style="background: var(--c-amber);"></span> Major</div>
+            <div><span class="inline-block w-3 h-3 rounded-sm align-middle" style="background: #1976D2;"></span> Minor</div>
+          </div>
+        </div>
+      </div>
+      <div class="card p-5">
+        <div class="font-bold mb-3 text-sm">Behebungs-Rate Sprint 14</div>
+        <div class="bg-slate-200 rounded-full h-6 overflow-hidden mb-2">
+          <div class="h-full text-white text-xs flex items-center justify-end pr-3 font-bold"
+               style="width:62%; background: var(--c-green);">5 / 8 closed</div>
+        </div>
+        <div class="text-xs text-slate-500">62% der Bugs im aktuellen Sprint geschlossen</div>
+      </div>
+      <div class="card p-5">
+        <div class="font-bold mb-3 text-sm">Avg. Fix-Zeit Critical</div>
+        <div class="text-4xl font-bold" style="color: var(--c-red);">1,8 Tage</div>
+        <div class="text-xs text-slate-500 mt-1">über die letzten 5 Sprints</div>
+      </div>
+    </div>
+
+    <!-- Bug-Report-Formular -->
+    <div class="card p-6">
+      <h3 class="font-bold mb-3" style="color: var(--c-darkblue);">Neuen Bug melden</h3>
+      <form @submit.prevent="submitBug()" class="grid grid-cols-2 gap-4 text-sm">
+        <div class="col-span-2"><label class="block font-semibold mb-1">Titel</label>
+          <input x-model="newBug.title" required class="w-full border border-slate-300 rounded px-3 py-2"></div>
+        <div><label class="block font-semibold mb-1">Modul</label>
+          <select x-model="newBug.module" class="w-full border border-slate-300 rounded px-3 py-2">
+            <option>Surgeon UI</option><option>Calibration</option>
+            <option>Service</option><option>Patient Data</option><option>Imaging</option>
+          </select></div>
+        <div><label class="block font-semibold mb-1">Schweregrad</label>
+          <select x-model="newBug.severity" class="w-full border border-slate-300 rounded px-3 py-2">
+            <option>Blocker</option><option>Critical</option><option>Major</option>
+            <option>Minor</option><option>Trivial</option>
+          </select></div>
+        <div><label class="block font-semibold mb-1">Verlinkter Testfall</label>
+          <select x-model="newBug.linked_test" class="w-full border border-slate-300 rounded px-3 py-2">
+            <option value="">— keiner —</option>
+            <template x-for="tc in testCases" :key="tc.id">
+              <option :value="tc.id" x-text="`${tc.id} — ${tc.title}`"></option>
+            </template>
+          </select></div>
+        <div><label class="block font-semibold mb-1">Verlinkte Anforderung</label>
+          <select x-model="newBug.linked_requirement" class="w-full border border-slate-300 rounded px-3 py-2">
+            <option value="">— keine —</option>
+            <template x-for="r in requirements" :key="r.id">
+              <option :value="r.id" x-text="`${r.id} — ${r.title}`"></option>
+            </template>
+          </select></div>
+        <div class="col-span-2"><label class="block font-semibold mb-1">Beschreibung
+          <span class="text-xs text-slate-400">(Auf Englisch — Dokumentationssprache)</span></label>
+          <textarea x-model="newBug.description" rows="3" class="w-full border border-slate-300 rounded px-3 py-2"></textarea></div>
+        <div class="col-span-2"><label class="block font-semibold mb-1">Schritte zur Reproduktion</label>
+          <textarea x-model="newBug.steps_to_reproduce" rows="2" class="w-full border border-slate-300 rounded px-3 py-2"></textarea></div>
+        <div><label class="block font-semibold mb-1">Erwartetes Verhalten</label>
+          <input x-model="newBug.expected" class="w-full border border-slate-300 rounded px-3 py-2"></div>
+        <div><label class="block font-semibold mb-1">Tatsächliches Verhalten</label>
+          <input x-model="newBug.actual" class="w-full border border-slate-300 rounded px-3 py-2"></div>
+        <div class="col-span-2 flex justify-end">
+          <button type="submit" class="text-white px-5 py-2 rounded font-semibold"
+                  style="background: var(--c-red);">Bug an Jira melden</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bug-Detail-Modal -->
+    <div class="modal-bg" x-show="selectedBug" x-cloak @click.self="selectedBug=null">
+      <div class="modal" x-show="selectedBug">
+        <template x-if="selectedBug">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-sm text-slate-500" x-text="selectedBug.id"></div>
+                <h3 class="text-2xl font-bold" x-text="selectedBug.title"></h3>
+                <div class="text-xs mt-1">
+                  <span class="font-semibold" :style="`color: ${sevColor(selectedBug.severity)};`" x-text="selectedBug.severity"></span>
+                  · Status: <span x-text="selectedBug.status"></span>
+                  · Modul: <span x-text="selectedBug.module"></span>
+                </div>
+              </div>
+              <button @click="selectedBug=null" class="text-slate-500 text-2xl">&times;</button>
+            </div>
+            <div class="text-sm space-y-2">
+              <div><b>Reporter:</b> <span x-text="selectedBug.reporter"></span></div>
+              <div x-show="selectedBug.assignee"><b>Assignee:</b> <span x-text="selectedBug.assignee"></span></div>
+              <div x-show="selectedBug.linked_test"><b>Verlinkter Test:</b> <span x-text="selectedBug.linked_test"></span></div>
+              <div x-show="selectedBug.linked_requirement"><b>Verlinkte Anforderung:</b> <span x-text="selectedBug.linked_requirement"></span></div>
+              <div><b>Description (EN):</b><br><span x-text="selectedBug.description"></span></div>
+              <div x-show="selectedBug.steps_to_reproduce"><b>Steps to reproduce:</b><br><span x-text="selectedBug.steps_to_reproduce"></span></div>
+              <div x-show="selectedBug.expected"><b>Expected:</b> <span x-text="selectedBug.expected"></span></div>
+              <div x-show="selectedBug.actual"><b>Actual:</b> <span x-text="selectedBug.actual"></span></div>
+            </div>
+            <div class="mt-4">
+              <label class="block font-semibold text-sm mb-1">Status ändern</label>
+              <select :value="selectedBug.status"
+                      @change="moveBug(selectedBug.id, $event.target.value)"
+                      class="border border-slate-300 rounded px-3 py-2 text-sm">
+                <option>OPEN</option><option>IN_PROGRESS</option>
+                <option>IN_REVIEW</option><option>IN_TEST</option><option>CLOSED</option>
+              </select>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SEITE 5: TRACEABILITY & SPRINT ========== -->
+  <section x-show="view==='trace'" x-cloak>
+    <h1 class="text-2xl font-bold" style="color: var(--c-darkblue);">Traceability &amp; Sprint — Compliance + Agile</h1>
+    <p class="text-slate-500 mb-6">IEC 62304 Anforderungs-Verfolgbarkeit · Sprint-Planung</p>
+
+    <!-- Traceability-Matrix -->
+    <div class="card p-6 mb-8">
+      <h3 class="font-bold" style="color: var(--c-darkblue);">Anforderungs-Verfolgbarkeitsmatrix (RTM)</h3>
+      <p class="text-slate-500 text-sm mb-4">Jede User-Anforderung muss bis zum Test rückverfolgbar sein — IEC 62304 §5.7.1</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="text-xs uppercase tracking-wide text-white" style="background: var(--c-darkblue);">
+              <th class="p-2 text-left">User Need</th>
+              <th class="p-2 text-left">System Req</th>
+              <th class="p-2 text-left">Software Req</th>
+              <th class="p-2 text-left">Architecture</th>
+              <th class="p-2 text-left">Test Case</th>
+              <th class="p-2 text-left">Status</th>
+              <th class="p-2 text-left">Risk Class</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in trace" :key="row.software_req">
+              <tr :class="i % 2 ? 'bg-slate-50' : ''">
+                <td class="p-2" x-text="row.user_need"></td>
+                <td class="p-2" x-text="row.system_req"></td>
+                <td class="p-2 font-semibold" x-text="row.software_req"></td>
+                <td class="p-2" x-text="row.architecture"></td>
+                <td class="p-2" x-text="row.test_case"></td>
+                <td class="p-2"><span :class="statusClass(row.status)" x-text="statusLabel(row.status)"></span></td>
+                <td class="p-2"><span :class="`badge-class-${row.risk_class}`" x-text="row.risk_class"></span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 text-xs text-slate-500">
+        Klasse C = höchstes Risiko (Lebensgefahr durch Software-Fehler).
+        Klasse B = Verletzungsrisiko. Klasse A = kein Risiko.
+      </div>
+    </div>
+
+    <!-- IEC 62304 Lebenszyklus als Kreisdiagramm -->
+    <div class="card p-6 mb-8">
+      <h3 class="font-bold mb-1" style="color: var(--c-darkblue);">IEC 62304 Software-Lebenszyklus</h3>
+      <p class="text-slate-500 text-sm mb-4">Aktuell aktiv: Schritt 7 — System Testing (deine Hauptarbeit)</p>
+      <div class="iec-circle">
+        <template x-for="(node, i) in iecNodes" :key="i">
+          <div class="iec-node"
+               :class="i+1 === 7 ? 'active' : ''"
+               :style="iecPosition(i)"
+               x-text="`${i+1}. ${node}`"></div>
+        </template>
+      </div>
+      <div class="mt-6 grid grid-cols-3 gap-3 text-sm">
+        <div class="card p-3" style="background:#f3e5f5;">🔄 Software Configuration Management (SVN)</div>
+        <div class="card p-3" style="background:#fff8e1;">🔄 Software Problem Resolution (Jira)</div>
+        <div class="card p-3" style="background:#e8f5e9;">🔄 Software Risk Management (ISO 14971)</div>
+      </div>
+    </div>
+
+    <!-- Sprint-Backlog -->
+    <div class="card p-6 mb-8">
+      <h3 class="font-bold" style="color: var(--c-darkblue);">Sprint 14 Backlog — Agile Entwicklungsteam</h3>
+      <p class="text-slate-500 text-sm mb-4">Drag-and-Drop simuliert — Klick auf eine Story öffnet das Status-Menü.</p>
+      <div class="sprint-kanban">
+        <template x-for="col in storyColumns" :key="col.key">
+          <div>
+            <div class="font-bold mb-2 px-2 py-1 rounded text-sm"
+                 :style="`background: ${col.bg}; color: ${col.fg};`"
+                 x-text="col.label"></div>
+            <template x-for="s in (sprint?.stories ?? []).filter(x => x.status === col.key)" :key="s.id">
+              <div class="story-card" :style="`border-left-color: ${col.fg};`">
+                <div class="flex justify-between">
+                  <span class="text-xs text-slate-500" x-text="s.id"></span>
+                  <span class="sp-badge" x-text="`${s.story_points} SP`"></span>
+                </div>
+                <div class="font-semibold text-sm mt-1" x-text="s.title"></div>
+                <div class="text-xs text-slate-500 mt-1">👤 <span x-text="s.assignee"></span></div>
+                <select :value="s.status" @change="moveStory(s.id, $event.target.value)"
+                        class="mt-2 text-xs border border-slate-200 rounded px-2 py-1 w-full">
+                  <option value="TODO">TO DO</option>
+                  <option value="IN_PROGRESS">IN PROGRESS</option>
+                  <option value="DONE">DONE</option>
+                </select>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Scrum Ceremonies Zeitlinie -->
+    <div class="card p-6">
+      <h3 class="font-bold mb-1" style="color: var(--c-darkblue);">Sprint-Zyklus — 2-Wochen-Sprints im Team IT Solutions</h3>
+      <p class="text-slate-500 text-sm mb-4">Heute: Tag 7 von 14 — Mid-Sprint-Phase</p>
+      <div class="timeline mb-3">
+        <template x-for="d in 14" :key="d">
+          <div class="day-cell"
+               :class="d < (sprint?.current_day ?? 7) ? 'done' : (d === (sprint?.current_day ?? 7) ? 'today' : 'future')"
+               x-text="`Tag ${d}`"></div>
+        </template>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
+        <div>📅 <b>Tag 1:</b> Sprint Planning (Story Points schätzen)</div>
+        <div>☕ <b>Täglich:</b> Daily Stand-Up (15 Min, 9:30 Uhr)</div>
+        <div>🔍 <b>Tag 7:</b> Mid-Sprint Refinement (Backlog-Pflege)</div>
+        <div>🎬 <b>Tag 14 vormittags:</b> Sprint Review (Demo)</div>
+        <div>♻️ <b>Tag 14 nachmittags:</b> Sprint Retrospective</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Toast für Bestätigungen -->
+<div class="toast" x-show="toast" x-cloak x-transition x-text="toast"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

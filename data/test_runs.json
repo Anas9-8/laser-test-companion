@@ -1,0 +1,12 @@
+[
+  {"date": "2026-04-23", "total": 138, "passed": 130, "failed": 8},
+  {"date": "2026-04-24", "total": 138, "passed": 132, "failed": 6},
+  {"date": "2026-04-25", "total": 140, "passed": 133, "failed": 7},
+  {"date": "2026-04-26", "total": 140, "passed": 135, "failed": 5},
+  {"date": "2026-04-27", "total": 141, "passed": 124, "failed": 17},
+  {"date": "2026-04-28", "total": 141, "passed": 137, "failed": 4},
+  {"date": "2026-04-29", "total": 142, "passed": 134, "failed": 8},
+  {"date": "2026-04-30", "total": 142, "passed": 140, "failed": 2},
+  {"date": "2026-05-01", "total": 142, "passed": 116, "failed": 26},
+  {"date": "2026-05-02", "total": 142, "passed": 118, "failed": 24}
+]

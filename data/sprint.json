@@ -1,0 +1,67 @@
+{
+  "number": 14,
+  "start_date": "2026-05-07",
+  "end_date": "2026-05-20",
+  "current_day": 7,
+  "total_days": 14,
+  "story_points_total": 42,
+  "story_points_done": 21,
+  "stories": [
+    {
+      "id": "S-1289",
+      "title": "TC-1289: Bestätigungsdialog bei OP-Abbruch testen",
+      "story_points": 5,
+      "status": "TODO",
+      "assignee": "Anas"
+    },
+    {
+      "id": "S-1294",
+      "title": "TC-1294: Service-Modus-Login validieren",
+      "story_points": 3,
+      "status": "TODO",
+      "assignee": "Junior Dev"
+    },
+    {
+      "id": "S-1255",
+      "title": "TC-1255: OCT-Bildaufnahme nach SMILE-Schnitt",
+      "story_points": 8,
+      "status": "IN_PROGRESS",
+      "assignee": "Anas"
+    },
+    {
+      "id": "S-862",
+      "title": "BUG-862: Patient-ID Sonderzeichen",
+      "story_points": 5,
+      "status": "IN_PROGRESS",
+      "assignee": "Sarah (Senior Dev)"
+    },
+    {
+      "id": "S-1042",
+      "title": "TC-1042: Patient anlegen",
+      "story_points": 5,
+      "status": "DONE",
+      "assignee": "Anas"
+    },
+    {
+      "id": "S-1118",
+      "title": "TC-1118: Energie-Grenzwert",
+      "story_points": 5,
+      "status": "DONE",
+      "assignee": "Anas"
+    },
+    {
+      "id": "S-820",
+      "title": "BUG-820: Memory Leak Treatment Logger",
+      "story_points": 8,
+      "status": "DONE",
+      "assignee": "Sarah (Senior Dev)"
+    },
+    {
+      "id": "S-851",
+      "title": "BUG-851: Tooltip Lokalisierung",
+      "story_points": 3,
+      "status": "DONE",
+      "assignee": "Frontend Dev"
+    }
+  ]
+}

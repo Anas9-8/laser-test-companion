@@ -1,0 +1,45 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- pytest ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Claude / AI assistant artefacts (sicherheitshalber) ---
+.claude/
+.claude*
+.anthropic/
+.anthropic*
+claude/
+CLAUDE.md
+CLAUDE.local.md
+.aider*
+.cursor/
+.continue/
+
+# --- Persönliche Vortrags-Notizen, nicht für GitHub ---
+docs/PROJEKT_BERICHT.md
+
+# --- OS ---
+*.log
+*.tmp

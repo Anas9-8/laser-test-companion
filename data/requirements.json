@@ -1,0 +1,38 @@
+[
+  {
+    "id": "REQ-SUI-12",
+    "title": "Patient mit Pflichtfeldern speichern",
+    "user_need": "USR-2",
+    "system_req": "SYS-7",
+    "architecture": "PatientModule",
+    "risk_class": "B",
+    "description": "Das System muss einen neuen Patientendatensatz mit Pflichtfeldern (Name, Geburtsdatum, Patient-ID, Augenseite) speichern und in der Patientenliste anzeigen."
+  },
+  {
+    "id": "REQ-CAL-07",
+    "title": "Laserenergie maximal 350 mJ pro Puls",
+    "user_need": "USR-3",
+    "system_req": "SYS-9",
+    "architecture": "CalibModule",
+    "risk_class": "C",
+    "description": "Eingaben oberhalb 350 mJ pro Puls müssen abgelehnt und mit einer Fehlermeldung quittiert werden. Grenzwert 350 mJ ist gerade noch zulässig."
+  },
+  {
+    "id": "REQ-SAFETY-03",
+    "title": "Notabschaltung innerhalb 200 ms",
+    "user_need": "USR-1",
+    "system_req": "SYS-3",
+    "architecture": "SafetyController",
+    "risk_class": "C",
+    "description": "Beim Auslösen der Notabschaltung muss der Laserpuls innerhalb von maximal 200 ms gestoppt werden. IEC 62304 Software-Klasse C."
+  },
+  {
+    "id": "REQ-IMG-15",
+    "title": "OCT-Bild innerhalb 2 s verfügbar",
+    "user_need": "USR-4",
+    "system_req": "SYS-11",
+    "architecture": "ImagingModule",
+    "risk_class": "B",
+    "description": "Nach erfolgreichem SMILE-Schnitt muss das OCT-Bild innerhalb von 2 Sekunden in der Surgeon-UI dargestellt werden."
+  }
+]

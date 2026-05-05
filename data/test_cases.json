@@ -1,0 +1,102 @@
+[
+  {
+    "id": "TC-1042",
+    "title": "Patient anlegen mit gültigen Daten",
+    "module": "Surgeon UI",
+    "status": "implementiert",
+    "requirement_id": "REQ-SUI-12",
+    "last_run_at": "2026-05-02 14:32",
+    "last_run_result": "PASS",
+    "last_run_seconds": 3.2,
+    "squish_script": "tst_1042_patient_create.py",
+    "steps": [
+      "AUT starten und auf Hauptscreen warten",
+      "Button 'Neuer Patient' klicken",
+      "Felder ausfüllen: Name, Geburtsdatum, Patient-ID, Augenseite",
+      "'Speichern' klicken",
+      "Verifizieren: Patient erscheint in der Patientenliste"
+    ],
+    "object_map": [
+      ":MainWindow",
+      ":btnNewPatient",
+      ":nameField",
+      ":dobField",
+      ":patientIdField",
+      ":btnSave",
+      ":patientList_Mustermann"
+    ],
+    "linked_bug": null
+  },
+  {
+    "id": "TC-1118",
+    "title": "Behandlungsparameter Energieeingabe Grenzwert",
+    "module": "Calibration",
+    "status": "implementiert",
+    "requirement_id": "REQ-CAL-07",
+    "last_run_at": "2026-05-02 15:01",
+    "last_run_result": "PASS",
+    "last_run_seconds": 5.8,
+    "squish_script": "tst_1118_energy_boundary.py",
+    "steps": [
+      "Calibration-Modul öffnen",
+      "Energie auf 349 mJ setzen → akzeptiert",
+      "Energie auf 350 mJ setzen → akzeptiert (Grenzwert)",
+      "Energie auf 351 mJ setzen → Fehlermeldung erwartet",
+      "Verifizieren: Fehler-Dialog mit Text 'Wert überschreitet Maximum'"
+    ],
+    "object_map": [
+      ":CalibrationView",
+      ":energyInput",
+      ":btnApply",
+      ":errorDialog_text"
+    ],
+    "linked_bug": null
+  },
+  {
+    "id": "TC-1203",
+    "title": "Notabschaltung Laser während Behandlung",
+    "module": "Surgeon UI",
+    "status": "failed",
+    "requirement_id": "REQ-SAFETY-03",
+    "last_run_at": "2026-05-02 16:14",
+    "last_run_result": "FAIL",
+    "last_run_seconds": 0.25,
+    "squish_script": "tst_1203_emergency_stop.py",
+    "steps": [
+      "Behandlung auf Phantom-Auge starten",
+      "Notabschaltungs-Button drücken",
+      "Zeit bis laserStopped-Event messen",
+      "Verifizieren: Stoppzeit ≤ 200 ms",
+      "Logs auf Safety-Event prüfen"
+    ],
+    "object_map": [
+      ":TreatmentView",
+      ":btnEmergencyStop",
+      ":evt_laserStopped"
+    ],
+    "linked_bug": "BUG-887"
+  },
+  {
+    "id": "TC-1255",
+    "title": "OCT-Bildaufnahme nach SMILE-Schnitt",
+    "module": "Surgeon UI",
+    "status": "in_arbeit",
+    "requirement_id": "REQ-IMG-15",
+    "last_run_at": null,
+    "last_run_result": "WIP",
+    "last_run_seconds": null,
+    "squish_script": "tst_1255_oct_capture.py",
+    "steps": [
+      "Behandlungssimulation SMILE-Schnitt abschließen",
+      "Wartezeit bis OCT-Bild verfügbar messen",
+      "Verifizieren: Bild innerhalb 2 s sichtbar",
+      "Bildmetadaten prüfen (Auflösung, Zeitstempel)"
+    ],
+    "object_map": [
+      ":SurgeonMain",
+      ":btnFinishCut",
+      ":octViewer_image"
+    ],
+    "linked_bug": null
+  }
+]
