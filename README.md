@@ -1,7 +1,7 @@
 # Laser Test Companion
 
 > Demo-Projekt zur Testautomatisierung eines medizintechnischen Lasersystems.
-> Gebaut für die Bewerbung als **(Junior) Softwareentwickler (m/w/d) Testautomatisierung** bei **EXCO GmbH**, Standort Jena oder Frankenthal, Team IT Solutions.
+> Gebaut für die Bewerbung als **(Junior) Softwareentwickler Testautomatisierung** bei **EXCO GmbH**, Standort Jena oder Frankenthal, Team IT Solutions.
 
 ---
 
@@ -203,17 +203,6 @@ Kanban-Board mit fünf Spalten (OPEN, IN PROGRESS, IN REVIEW, IN TEST, CLOSED), 
 - **`TEST_CASE_VORLAGE.md`** — Vorlage für einen Testfall, ausgefüllt mit TC-1042.
 - **`IEC62304_PROZESS.md`** — Erklärung der Norm IEC 62304 (Klassen A/B/C, RTM, ISO 13485, ISO 14971).
 - **`SPRINT_GUIDE.md`** — wie ein 2-Wochen-Sprint im Team IT Solutions abläuft.
-
----
-
-## Über die Stelle
-
-- **Firma:** EXCO GmbH (gegründet 1994, ~150 Mitarbeiter, 8 Standorte).
-- **Standort:** Jena (in der Nähe von Carl Zeiss Meditec) oder Frankenthal (Pfalz).
-- **Team:** IT Solutions.
-- **Branche:** Medizintechnik (ophthalmologische Laserchirurgie).
-- **Kontakt:** Sarah Gogel — `sarah.gogel@exco-group.com` — `+49 6233 73778-373`.
-- **Zertifizierungen:** DIN EN ISO 9001:2015, DIN EN ISO 13485:2016.
 
 ---
 
