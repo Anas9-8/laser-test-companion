@@ -1,7 +1,6 @@
 # Laser Test Companion
 
 > Demo-Projekt zur Testautomatisierung eines medizintechnischen Lasersystems.
-> Gebaut für die Bewerbung als **(Junior) Softwareentwickler Testautomatisierung** bei **EXCO GmbH**, Standort Jena oder Frankenthal, Team IT Solutions.
 
 ---
 
